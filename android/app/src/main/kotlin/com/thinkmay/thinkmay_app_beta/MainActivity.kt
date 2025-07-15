@@ -1,4 +1,4 @@
-package com.example.new_flutter_app
+package com.thinkmay.thinkmay_app_beta
 
 import io.flutter.embedding.android.FlutterActivity
 
