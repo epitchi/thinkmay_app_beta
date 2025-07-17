@@ -17,8 +17,6 @@ class MainActivity: FlutterActivity() {
                 } else {
                     result.notImplemented();
                 }
-            // Note: this method is invoked on the main thread.
-            // TODO
         }
     }
 }
