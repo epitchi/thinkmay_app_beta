@@ -2,10 +2,10 @@ name: 🛠 Android CI / Build & Release APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
     tags:    [ 'v*.*.*' ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 permissions:
   contents: write   # allow creating/updating Releases & uploading assets
