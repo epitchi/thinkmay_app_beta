@@ -33,7 +33,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const platform = MethodChannel('com.thinkmay.thinkmay_app_beta/battery');
+  static const platform = MethodChannel('com.thinkmay.thinkmay_app/battery');
 
   Future<void> _testOpenNativeApp() async {
     try {

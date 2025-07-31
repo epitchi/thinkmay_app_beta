@@ -1,4 +1,4 @@
-package com.thinkmay.thinkmay_app_beta
+package com.thinkmay.thinkmay_app
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -7,7 +7,7 @@ import io.flutter.plugin.common.MethodChannel
 import android.content.Intent;
 
 class MainActivity: FlutterActivity() {
-    private val CHANNEL = "com.thinkmay.thinkmay_app_beta/battery"
+    private val CHANNEL = "com.thinkmay.thinkmay_app/battery"
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

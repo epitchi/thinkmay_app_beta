@@ -1,4 +1,4 @@
-package com.thinkmay.thinkmay_app_beta
+package com.thinkmay.thinkmay_app
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
