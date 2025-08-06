@@ -14,7 +14,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.limelight.LimeLog;
-import com.limelight.R;
+import com.thinkmay.thinkmay_app_beta.R;
 import com.limelight.binding.input.ControllerHandler;
 
 import java.util.ArrayList;

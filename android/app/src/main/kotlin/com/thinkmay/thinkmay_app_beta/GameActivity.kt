@@ -4,10 +4,13 @@ package com.thinkmay.thinkmay_app_beta
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
+import android.hardware.input.InputManager
 import android.media.AudioManager
+import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Bundle
 import android.preference.Preference
+import android.view.Display
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -19,6 +22,7 @@ import android.view.View.OnTouchListener
 import android.view.Surface
 import android.view.Window
 import android.view.WindowManager
+import android.widget.FrameLayout
 
 import androidx.appcompat.app.AppCompatActivity
 
@@ -33,7 +37,12 @@ import com.limelight.binding.audio.AndroidAudioRenderer
 import com.limelight.binding.input.capture.InputCaptureManager
 import com.limelight.binding.input.capture.InputCaptureProvider
 import com.limelight.binding.input.evdev.EvdevListener
+import com.limelight.binding.input.touch.AbsoluteTouchContext
+import com.limelight.binding.input.touch.RelativeTouchContext
+import com.limelight.binding.video.CrashListener
 import com.limelight.binding.video.MediaCodecHelper
+import com.limelight.binding.video.PerfOverlayListener
+import com.limelight.nvstream.NvConnection
 import com.limelight.preferences.GlPreferences
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.ui.GameGestures
@@ -46,6 +55,7 @@ class Game: AppCompatActivity(),
     OnKeyListener,
     InputCallbacks,
     View.OnSystemUiVisibilityChangeListener,
+    PerfOverlayListener,
     OnGenericMotionListener {
 
     private var attemptedConnection = false
@@ -54,9 +64,9 @@ class Game: AppCompatActivity(),
     private val touchContextMap : Array<TouchContext?> = arrayOfNulls(2)
     private val threeFingerDownTime : Long = 0
 
-    private val controllerHandler : ControllerHandler? = null
-    private val keyboardTranslator : KeyboardTranslator? = null
-    private val virtualController : VirtualController? = null
+    private var controllerHandler : ControllerHandler? = null
+    private var keyboardTranslator : KeyboardTranslator? = null
+    private var virtualController : VirtualController? = null
 
     companion object {
         const val REFERENCE_HORIZ_RES: Int = 1280
@@ -83,6 +93,7 @@ class Game: AppCompatActivity(),
 
     private var inputCaptureProvider : InputCaptureProvider? = null
 
+    private var conn : NvConnection? = null
     private var streamView : StreamView? = null
     private val lastAbsTouchUpTime: Long = 0
     private val lastAbsTouchDownTime: Long = 0
@@ -91,7 +102,7 @@ class Game: AppCompatActivity(),
     private val lastAbsTouchDownX = 0f
     private val lastAbsTouchDownY = 0f
 
-    private val decoderRenderer : MediaCodecDecoderRenderer? = null
+    private var decoderRenderer : MediaCodecDecoderRenderer? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -122,7 +133,6 @@ class Game: AppCompatActivity(),
         if (preferenceConfiguration.stretchVideo || shouldIgnoreInsetsForResolution(
                 preferenceConfiguration.width,
                 preferenceConfiguration.height)) {
-
         }
 
         streamView = findViewById<StreamView>(R.id.surfaceView)
@@ -157,11 +167,77 @@ class Game: AppCompatActivity(),
             }
         }
 
+        val connMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
         val glPrefs = GlPreferences.readPreferences(this)
         MediaCodecHelper.initialize(this,glPrefs.glRenderer)
-    }
 
+        var willStreamHDR = false
+        if (preferenceConfiguration.enableHdr) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val display = windowManager.defaultDisplay
+                val hdrCaps = display.hdrCapabilities
+                if (hdrCaps != null) {
+                    for (hdrType in hdrCaps.supportedHdrTypes) {
+                        if (hdrType == Display.HdrCapabilities.HDR_TYPE_HDR10) {
+                            willStreamHDR = true
+                            break
+                        }
+                    }
+                }
+            }
+        }
+
+        val crashHandler = CrashListener() {
+            fun notifyCrash(e: Exception) {
+
+            }
+        }
+
+
+        decoderRenderer = tombstonePrefs?.getInt("CrashCount",4)?.let {
+            MediaCodecDecoderRenderer(
+                this,
+                preferenceConfiguration,
+                crashHandler,
+                it,
+                connMgr.isActiveNetworkMetered,
+                willStreamHDR,
+                glPrefs.glRenderer,
+                this)
+        }
+
+
+        conn = NvConnection()
+        controllerHandler = ControllerHandler(this,conn,this,preferenceConfiguration)
+        keyboardTranslator = KeyboardTranslator()
+
+        val inputManager = getSystemService(Context.INPUT_SERVICE) as InputManager
+        inputManager.registerInputDeviceListener(keyboardTranslator,null)
+
+        for (i in 1..touchContextMap.size) {
+            if (preferenceConfiguration?.touchscreenTrackpad == false) {
+                touchContextMap[i] = AbsoluteTouchContext(conn,i,streamView)
+            } else {
+                touchContextMap[i] = RelativeTouchContext(conn,i,
+                    REFERENCE_HORIZ_RES,
+                    REFERENCE_VERT_RES,
+                    streamView,
+                    preferenceConfiguration)
+            }
+        }
+
+        if (preferenceConfiguration?.onscreenController==true) {
+            virtualController = VirtualController(controllerHandler,
+                streamView?.parent as FrameLayout,
+                this)
+            virtualController?.refreshLayout()
+            virtualController?.show()
+        }
+
+
+        streamView?.holder?.addCallback(this)
+    }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         var desiredFrameRate = 0f
@@ -181,6 +257,7 @@ class Game: AppCompatActivity(),
             holder.surface.setFrameRate(desiredFrameRate,
                 Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE)
         }
+
 
 
     }
@@ -308,5 +385,9 @@ class Game: AppCompatActivity(),
     fun handleMotionEvent(view: View, event: MotionEvent) : Boolean {
 
         return false
+    }
+
+    override fun onPerfUpdate(text: String?) {
+        TODO("Not yet implemented")
     }
 }

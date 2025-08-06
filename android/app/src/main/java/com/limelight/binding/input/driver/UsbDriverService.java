@@ -18,7 +18,7 @@ import android.view.InputDevice;
 import android.widget.Toast;
 
 import com.limelight.LimeLog;
-import com.limelight.R;
+import com.thinkmay.thinkmay_app_beta.R;
 import com.limelight.preferences.PreferenceConfiguration;
 
 import java.io.File;
