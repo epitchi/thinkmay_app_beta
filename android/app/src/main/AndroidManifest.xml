@@ -25,10 +25,20 @@
             </intent-filter>
         </activity>
         <activity
-            android:theme="@style/Theme.AppCompat.Light"
-            android:name=".SecondActivity"/>
-        <!-- Don't delete the meta-data below.
-             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+            android:name=".Game"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
+            android:noHistory="true"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
+            android:enableOnBackInvokedCallback="false"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:theme="@style/StreamTheme"
+            android:preferMinimalPostProcessing="true">
+
+            <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
+            <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
+        </activity>
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

@@ -26,7 +26,7 @@ import com.limelight.ui.StreamView.InputCallbacks
 import com.limelight.binding.audio.AndroidAudioRenderer
 import com.limelight.preferences.PreferenceConfiguration
 
-class SecondActivity: AppCompatActivity(), SurfaceHolder.Callback, OnTouchListener, OnKeyListener, InputCallbacks, OnGenericMotionListener {
+class Game: AppCompatActivity(), SurfaceHolder.Callback, OnTouchListener, OnKeyListener, InputCallbacks, OnGenericMotionListener {
 
     private var attemptedConnection = false
     private val desiredFrameRate: Float = 0f
@@ -74,7 +74,7 @@ class SecondActivity: AppCompatActivity(), SurfaceHolder.Callback, OnTouchListen
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_second)
+        setContentView(R.layout.activity_game)
     }
 
 
