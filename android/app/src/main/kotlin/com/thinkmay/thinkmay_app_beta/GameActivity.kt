@@ -1,10 +1,14 @@
 package com.thinkmay.thinkmay_app_beta
 
 
+import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.ActivityInfo
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.preference.Preference
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.SurfaceHolder
@@ -13,6 +17,8 @@ import android.view.View.OnGenericMotionListener
 import android.view.View.OnKeyListener
 import android.view.View.OnTouchListener
 import android.view.Surface
+import android.view.Window
+import android.view.WindowManager
 
 import androidx.appcompat.app.AppCompatActivity
 
@@ -24,9 +30,23 @@ import com.limelight.binding.video.MediaCodecDecoderRenderer
 import com.limelight.ui.StreamView
 import com.limelight.ui.StreamView.InputCallbacks
 import com.limelight.binding.audio.AndroidAudioRenderer
+import com.limelight.binding.input.capture.InputCaptureManager
+import com.limelight.binding.input.capture.InputCaptureProvider
+import com.limelight.binding.input.evdev.EvdevListener
+import com.limelight.binding.video.MediaCodecHelper
+import com.limelight.preferences.GlPreferences
 import com.limelight.preferences.PreferenceConfiguration
+import com.limelight.ui.GameGestures
 
-class Game: AppCompatActivity(), SurfaceHolder.Callback, OnTouchListener, OnKeyListener, InputCallbacks, OnGenericMotionListener {
+class Game: AppCompatActivity(),
+    SurfaceHolder.Callback,
+    EvdevListener,
+    GameGestures,
+    OnTouchListener,
+    OnKeyListener,
+    InputCallbacks,
+    View.OnSystemUiVisibilityChangeListener,
+    OnGenericMotionListener {
 
     private var attemptedConnection = false
     private val desiredFrameRate: Float = 0f
@@ -59,9 +79,11 @@ class Game: AppCompatActivity(), SurfaceHolder.Callback, OnTouchListener, OnKeyL
 
     private var preferenceConfiguration: PreferenceConfiguration? = null
     private var tombstonePrefs : SharedPreferences? = null
-    
 
-    private val streamView : StreamView? = null
+
+    private var inputCaptureProvider : InputCaptureProvider? = null
+
+    private var streamView : StreamView? = null
     private val lastAbsTouchUpTime: Long = 0
     private val lastAbsTouchDownTime: Long = 0
     private val lastAbsTouchUpX = 0f
@@ -74,7 +96,70 @@ class Game: AppCompatActivity(), SurfaceHolder.Callback, OnTouchListener, OnKeyL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN)
+
+        window.decorView.setOnSystemUiVisibilityChangeListener(this)
+
+        volumeControlStream = AudioManager.STREAM_MUSIC
+
         setContentView(R.layout.activity_game)
+
+        preferenceConfiguration = PreferenceConfiguration.readPreferences(this)
+        tombstonePrefs = this.getSharedPreferences("DecoderTombstone",0)
+
+        setPreferredOrientationForCurrentDisplay()
+
+
+        if (preferenceConfiguration.stretchVideo || shouldIgnoreInsetsForResolution(
+                preferenceConfiguration.width,
+                preferenceConfiguration.height)) {
+
+        }
+
+        streamView = findViewById<StreamView>(R.id.surfaceView)
+        streamView?.setOnGenericMotionListener(this)
+        streamView?.setOnKeyListener(this)
+        streamView?.setInputCallbacks(this)
+
+        val backgroundTouchView = findViewById<View>(R.id.backgroundTouchView)
+        backgroundTouchView.setOnTouchListener(this)
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) {
+            streamView?.requestUnbufferedDispatch(
+                InputDevice.SOURCE_CLASS_BUTTON or
+                    InputDevice.SOURCE_CLASS_JOYSTICK or
+                    InputDevice.SOURCE_CLASS_POINTER or
+                    InputDevice.SOURCE_CLASS_POSITION or
+                    InputDevice.SOURCE_CLASS_TRACKBALL)
+
+            backgroundTouchView?.requestUnbufferedDispatch(
+                InputDevice.SOURCE_CLASS_BUTTON or
+                    InputDevice.SOURCE_CLASS_JOYSTICK or
+                    InputDevice.SOURCE_CLASS_POINTER or
+                    InputDevice.SOURCE_CLASS_POSITION or
+                    InputDevice.SOURCE_CLASS_TRACKBALL )
+        }
+
+        inputCaptureProvider = InputCaptureManager.getInputCaptureProvider(this,this)
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+            streamView?.setOnCapturedPointerListener{
+                view,motionEvent -> handleMotionEvent(view,motionEvent)
+            }
+        }
+
+
+        val glPrefs = GlPreferences.readPreferences(this)
+        MediaCodecHelper.initialize(this,glPrefs.glRenderer)
     }
 
 
@@ -175,5 +260,53 @@ class Game: AppCompatActivity(), SurfaceHolder.Callback, OnTouchListener, OnKeyL
 
     fun stopConnection() {
 
+    }
+
+    override fun mouseMove(deltaX: Int, deltaY: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun mouseButtonEvent(buttonId: Int, down: Boolean) {
+        TODO("Not yet implemented")
+    }
+
+    override fun mouseVScroll(amount: Byte) {
+        TODO("Not yet implemented")
+    }
+
+    override fun mouseHScroll(amount: Byte) {
+        TODO("Not yet implemented")
+    }
+
+    override fun keyboardEvent(buttonDown: Boolean, keyCode: Short) {
+        TODO("Not yet implemented")
+    }
+
+    override fun toggleKeyboard() {
+        TODO("Not yet implemented")
+    }
+
+    override fun onSystemUiVisibilityChange(visibility: Int) {
+        TODO("Not yet implemented")
+    }
+
+
+    fun setPreferredOrientationForCurrentDisplay() {
+        val display = windowManager.defaultDisplay
+        if (PreferenceConfiguration.isSquarishScreen(display)) {
+
+        } else {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+        }
+    }
+
+    fun shouldIgnoreInsetsForResolution(width: Int, height: Int): Boolean {
+
+        return false
+    }
+    
+    fun handleMotionEvent(view: View, event: MotionEvent) : Boolean {
+
+        return false
     }
 }
