@@ -47,4 +47,5 @@ dependencies {
     implementation ("androidx.appcompat:appcompat:1.1.0")
     implementation ("androidx.constraintlayout:constraintlayout:1.1.3")
     implementation ("org.jcodec:jcodec:0.2.5")
+    implementation("androidx.compose.ui:ui-text:1.8.3")
 }
